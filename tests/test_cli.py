@@ -142,6 +142,39 @@ def test_cli_overrides_config_file(tmp_path) -> None:
     assert payload["run"]["function"] == "linear"
 
 
+def test_run_with_operator_restriction(tmp_path) -> None:
+    code = main(
+        [
+            "run",
+            "--function",
+            "quadratic",
+            "--policy",
+            "offline",
+            "--operators",
+            "mul",
+            "--iterations",
+            "3",
+            "--max-depth",
+            "2",
+            "--max-steps",
+            "2",
+            "--samples",
+            "12",
+            "--noise-std",
+            "0",
+            "--output",
+            str(tmp_path),
+            "--run-name",
+            "restricted",
+        ]
+    )
+    assert code == 0
+    payload = json.loads(
+        (tmp_path / "restricted" / "result.json").read_text(encoding="utf-8")
+    )
+    assert payload["search"]["operators"] == ["mul"]
+
+
 def test_run_csv_offline(tmp_path) -> None:
     csv_path = tmp_path / "data.csv"
     csv_path.write_text("x,y\n0,0\n1,1\n2,4\n3,9\n", encoding="utf-8")

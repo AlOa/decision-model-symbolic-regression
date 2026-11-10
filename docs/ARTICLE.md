@@ -206,6 +206,18 @@ Ogni run scrive un `result.json`, un `trace.json` e un `summary.md`. Il risultat
 
 Il confronto produce anche `comparison.json` e `comparison.md`, con le due policy affiancate sullo stesso seed e sullo stesso budget.
 
+La stessa funzionalità è disponibile come libreria Python, senza passare dagli artefatti:
+
+```python
+from symbolic_regression import fit
+
+result = fit({"x": x}, y, operators=("mul", "add"), iterations=50)
+print(result.simplified_expression)
+print(result.to_dict())
+```
+
+`fit` accetta dati come mapping, array o data frame, un set di operatori opzionale e restituisce l'espressione trovata insieme alla diagnostica completa della ricerca.
+
 La modalità offline permette di lavorare senza Ollama. Non è pensata per ottenere la migliore regressione possibile: è pensata per testare la pipeline, riprodurre esperimenti e fare demo in assenza di modelli locali.
 
 ---

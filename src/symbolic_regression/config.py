@@ -7,6 +7,8 @@ from dataclasses import MISSING, dataclass, fields
 from pathlib import Path
 from typing import Any, Mapping
 
+from .expression import OPERATORS
+
 VALID_POLICIES = ("decision", "uniform", "offline")
 
 
@@ -23,6 +25,7 @@ class RunConfig:
     base_url: str = "http://localhost:11434"
     policy: str = "decision"
     comparison_policies: tuple[str, ...] = ("decision", "uniform")
+    operators: tuple[str, ...] | None = None
     seed: int = 0
     samples: int = 64
     noise_std: float = 0.05
@@ -56,6 +59,16 @@ class RunConfig:
             self.comparison_policies = tuple(_split_csv(self.comparison_policies))
         else:
             self.comparison_policies = tuple(str(item).lower() for item in self.comparison_policies)
+        if self.operators is not None:
+            if isinstance(self.operators, str):
+                self.operators = tuple(_split_csv(self.operators))
+            else:
+                self.operators = tuple(str(item) for item in self.operators)
+            if not self.operators:
+                raise ValueError("operators must contain at least one operator")
+            unknown = [name for name in self.operators if name not in OPERATORS]
+            if unknown:
+                raise ValueError(f"Unknown operators: {', '.join(unknown)}")
 
         if self.mode not in ("run", "compare"):
             raise ValueError(f"Unknown mode {self.mode!r}; expected run or compare")
@@ -122,6 +135,7 @@ class RunConfig:
             "base_url": self.base_url,
             "policy": self.policy,
             "comparison_policies": list(self.comparison_policies),
+            "operators": list(self.operators) if self.operators else None,
             "seed": self.seed,
             "samples": self.samples,
             "noise_std": self.noise_std,
@@ -204,4 +218,7 @@ def merge_config(
     policies = values.get("comparison_policies")
     if isinstance(policies, str):
         values["comparison_policies"] = tuple(_split_csv(policies))
+    operators = values.get("operators")
+    if isinstance(operators, str):
+        values["operators"] = tuple(_split_csv(operators)) or None
     return RunConfig(**values)

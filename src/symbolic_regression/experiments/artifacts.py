@@ -71,6 +71,7 @@ def _result_payload(
             "c_puct": config.c_puct,
             "top_applications": config.top_applications,
             "max_operands": config.max_operands,
+            "operators": list(config.operators) if config.operators else None,
             "fit_threshold": config.fit_threshold,
             "max_steps": config.max_steps,
             "time_limit_seconds": config.time_limit_seconds,

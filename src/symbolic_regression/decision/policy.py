@@ -56,8 +56,8 @@ class OperatorCatalog:
     names: tuple[str, ...] = DEFAULT_OPERATORS
 
     def __post_init__(self) -> None:
-        if len(self.names) < 2:
-            raise ValueError("An operator catalogue needs at least two operators")
+        if len(self.names) < 1:
+            raise ValueError("An operator catalogue needs at least one operator")
         unknown = [name for name in self.names if name not in OPERATORS]
         if unknown:
             raise ValueError(f"Unknown operators in catalogue: {', '.join(unknown)}")
@@ -121,6 +121,8 @@ class OllamaOperatorPolicy:
         self.client = client
         self.model = model
         self.catalog = OperatorCatalog(tuple(operators) if operators else DEFAULT_OPERATORS)
+        if len(self.catalog.names) < 2:
+            raise ValueError("The Ollama decision policy needs at least two operators")
         self.instructions = instructions
         self.allow_fallback = allow_fallback
         self.cache = cache

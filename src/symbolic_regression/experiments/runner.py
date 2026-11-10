@@ -85,11 +85,13 @@ def make_policy(config: RunConfig) -> tuple[OperatorPolicy, OllamaClient | None]
                 "Start Ollama and use a model with the 'decision' capability, "
                 "or run with --policy offline."
             ) from exc
-        return OllamaOperatorPolicy(client=client, model=config.model), client
+        return OllamaOperatorPolicy(
+            client=client, model=config.model, operators=config.operators
+        ), client
     if config.policy == "uniform":
-        return UniformOperatorPolicy(), None
+        return UniformOperatorPolicy(operators=config.operators), None
     if config.policy == "offline":
-        return OfflineOperatorPolicy(seed=config.seed), None
+        return OfflineOperatorPolicy(seed=config.seed, operators=config.operators), None
     raise RunnerError(f"Unknown policy {config.policy!r}")
 
 
@@ -107,6 +109,9 @@ def make_mcts_config(config: RunConfig) -> MCTSConfig:
         time_limit_seconds=config.time_limit_seconds,
         seed=config.seed,
         greedy=config.greedy,
+        operators=config.operators,
+        context_rows=config.context_rows,
+        residual_values=config.residual_values,
     )
 
 

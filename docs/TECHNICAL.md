@@ -166,6 +166,11 @@ Guardie principali:
 Se una guardia fallisce, o se il risultato contiene `NaN`/`inf`, l'espressione
 viene considerata **non valida**. Non viene mai valutata parzialmente.
 
+Il set di operatori è globale, ma ricerca e policy accettano un sottoinsieme
+esplicito (`operators=...`). Il sottoinsieme viene validato, usato per limitare
+le probabilità della policy, il bank degli operandi e le applicazioni ammesse
+nell'albero.
+
 ### 4.3 Valutazione e formattazione
 
 `evaluate(expr, features, n_rows)` valuta l'albero in modo vettoriale su tutte
@@ -476,6 +481,11 @@ stringa, e limitato a `max_operands` (default 256). La dimensione resta
 controllata perché il modello non deve mai vedere gli operandi: è la ricerca a
 valutarli sui dati.
 
+Quando il set di operatori è ristretto, `build_operand_bank` riceve
+`unary_names` e `binary_names`: i termini composti vengono creati solo se
+l'operatore binario necessario è ammesso, e le applicazioni unarie solo per gli
+operatori unari selezionati.
+
 ---
 
 ## 10. Monte Carlo Tree Search
@@ -497,6 +507,9 @@ L'algoritmo è in `search/mcts.py`.
 | `max_steps` | 12 | limite sui passi dell'incumbent |
 | `time_limit_seconds` | 300 | budget wall-clock |
 | `greedy` | false | segue un solo percorso |
+| `operators` | tutti | sottoinsieme di operatori ammessi |
+| `context_rows` | 24 | righe campionate nel contesto |
+| `residual_values` | 16 | residui campionati nel contesto |
 
 ### 10.2 Nodi e azioni
 
@@ -682,6 +695,7 @@ Per ogni decisione viene registrato:
 - dataset: `function` oppure `csv`, `target`, `features`, `delimiter`, `header`;
 - modello: `model`, `base_url`, timeout e retry;
 - policy: `decision`, `uniform`, `offline`;
+- operatori: `operators` (sottoinsieme opzionale);
 - dati sintetici: `samples`, `noise_std`, `noise_snr_db`, `seed`;
 - ricerca: iterazioni, nodi, profondità, rollout, `c_puct`, top applicazioni,
   bank, soglia di fit, passi, tempo, `greedy`;
@@ -736,6 +750,7 @@ Opzioni principali:
 --function / --csv / --target / --features / --delimiter / --header
 --model / --base-url / --policy / --policies
 --seed / --samples / --noise-std / --noise-snr-db
+--operators
 --iterations / --max-nodes / --max-depth / --rollout-depth / --c-puct
 --top-applications / --max-operands / --fit-threshold / --max-steps
 --time-limit / --greedy / --request-timeout / --request-retries
@@ -745,6 +760,48 @@ Opzioni principali:
 
 La CLI restituisce `0` in caso di successo e `2` in caso di configurazione o
 runtime error, con messaggio su stderr.
+
+### 11.4 Libreria Python
+
+`api.py` espone l'interfaccia programmatica usata da un altro programma:
+
+```python
+from symbolic_regression import fit
+
+result = fit(
+    {"x": x},
+    y,
+    operators=("mul", "add", "sub"),
+    iterations=50,
+    seed=0,
+)
+print(result.simplified_expression, result.r2)
+print(result.to_dict())
+```
+
+`fit(features, target, *, operators=None, policy="offline", ...)`:
+
+- accetta un mapping nome → valori, un array 2-D con `feature_names`, o un
+  oggetto simile a un data frame (`columns` più indicizzazione per colonna);
+- accetta il target come array oppure come nome di colonna quando il contenitore
+  lo include già;
+- valida e filtra il set di operatori con lo stesso registro di `expression.py`;
+- costruisce la policy richiesta (`offline`, `uniform`, `decision` o
+  un'istanza custom) e la configurazione MCTS;
+- non scrive artefatti: restituisce direttamente un `FitResult`.
+
+`FitResult` contiene l'albero (`expression`), le forme testuali
+(`expression_str`, `simplified_expression`), la `evaluation` completa, le
+metriche derivate (`mse`, `nmse`, `r2`, `valid`), reward, stop reason, conteggi
+di decisioni e fallback, durata, feature, operatori, history e record delle
+decisioni. `to_dict()` serializza tutto (con `include_trace=False` omette
+history e decisioni), `summary()` produce un riepilogo testuale e
+`predict(features)` valuta l'espressione su nuovi dati.
+
+`SymbolicRegressor` è un wrapper con stato minimo: le opzioni di ricerca passate
+al costruttore vengono riusate da `fit()`, e gli attributi `expression_`,
+`simplified_expression_`, `metrics_`, `diagnostics_` e `predict()` inoltrano al
+`FitResult` corrente.
 
 ---
 
@@ -823,13 +880,15 @@ La suite è in `tests/`:
 | `test_config.py` | TOML, override, validazione |
 | `test_runner.py` | run, artefatti, confronto, CSV, riproducibilità |
 | `test_cli.py` | comandi, help, exit code, config |
+| `test_api.py` | `fit`, input, operatori, diagnostica, predict, wrapper |
+| `test_simplify.py` | conversione SymPy e semplificazione |
 | `test_live_smoke.py` | test live opzionali con Ollama |
 
 Risultati al momento della stesura:
 
 ```text
 uv run pytest -q
-217 passed, 3 skipped
+241 passed, 3 skipped
 ```
 
 I tre test live sono saltati di default. Con `OLLAMA_LIVE=1`:
@@ -895,7 +954,9 @@ SimbolicRegression/
 ├── README.md                       guida rapida
 ├── docs/
 │   └── TECHNICAL.md                questo documento
+├── examples/                       esempi eseguibili della libreria
 ├── src/symbolic_regression/
+│   ├── api.py                      API pubblica: fit, FitResult, SymbolicRegressor
 │   ├── expression.py               AST, operatori, valutazione, formattazione
 │   ├── data.py                     Dataset, validazione, CSV
 │   ├── metrics.py                  MSE, NMSE, R², reward

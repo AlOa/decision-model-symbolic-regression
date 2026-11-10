@@ -33,6 +33,10 @@ def _common_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--model", help="Ollama decision model name")
     parser.add_argument("--base-url", dest="base_url", help="Ollama base URL")
+    parser.add_argument(
+        "--operators",
+        help="comma-separated operators allowed in expressions (default: all)",
+    )
     parser.add_argument("--seed", type=int, help="random seed")
     parser.add_argument("--samples", type=int, help="number of generated samples")
     parser.add_argument("--noise-std", type=float, dest="noise_std", help="additive Gaussian noise std")
@@ -117,6 +121,7 @@ _CLI_FIELDS = (
     "header",
     "model",
     "base_url",
+    "operators",
     "seed",
     "samples",
     "noise_std",

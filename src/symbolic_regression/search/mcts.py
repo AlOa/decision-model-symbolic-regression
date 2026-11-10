@@ -12,6 +12,8 @@ from ..data import Dataset
 from ..decision.policy import OperatorPolicy, PolicyResult
 from ..expression import (
     BINARY_OPERATORS,
+    OPERATORS,
+    UNARY_OPERATORS,
     Expr,
     UnaryOp,
     BinaryOp,
@@ -38,6 +40,9 @@ class MCTSConfig:
     time_limit_seconds: float = 300.0
     seed: int = 0
     greedy: bool = False
+    operators: tuple[str, ...] | None = None
+    context_rows: int = 24
+    residual_values: int = 16
 
     def __post_init__(self) -> None:
         if self.iterations < 0:
@@ -54,6 +59,18 @@ class MCTSConfig:
             raise ValueError("fit_threshold must be between 0 and 1")
         if self.time_limit_seconds <= 0:
             raise ValueError("time_limit_seconds must be positive")
+        if self.context_rows < 1:
+            raise ValueError("context_rows must be positive")
+        if self.residual_values < 1:
+            raise ValueError("residual_values must be positive")
+        if self.operators is not None:
+            names = tuple(dict.fromkeys(str(name) for name in self.operators))
+            if not names:
+                raise ValueError("operators must contain at least one operator")
+            unknown = [name for name in names if name not in OPERATORS]
+            if unknown:
+                raise ValueError(f"Unknown operators: {', '.join(unknown)}")
+            self.operators = names
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,8 +124,23 @@ class MCTS:
         self._decision_calls = 0
         self._fallback_calls = 0
         self._node_count = 0
+        self.operators = (
+            tuple(self.config.operators)
+            if self.config.operators is not None
+            else tuple(OPERATORS)
+        )
+        self._operator_set = frozenset(self.operators)
+        binary_names = tuple(
+            name for name in self.operators if name in BINARY_OPERATORS
+        )
+        unary_names = tuple(
+            name for name in self.operators if name in UNARY_OPERATORS
+        )
         self._operand_bank = build_operand_bank(
-            dataset.feature_names, max_operands=self.config.max_operands
+            dataset.feature_names,
+            unary_names=unary_names,
+            binary_names=binary_names,
+            max_operands=self.config.max_operands,
         )
         self._best_node: Node | None = None
         self.root: Node | None = None
@@ -431,6 +463,8 @@ class MCTS:
     def _applications_for_operator(
         self, node: Node, operator: str, limit: int
     ) -> list[tuple[Action, Evaluation]]:
+        if operator not in self._operator_set:
+            return []
         found: list[tuple[Action, Evaluation]] = []
         if operator in BINARY_OPERATORS:
             for operand in self._operand_bank:
@@ -545,6 +579,8 @@ class MCTS:
             self.dataset,
             step=node.depth,
             history=_history(node),
+            context_rows=self.config.context_rows,
+            residual_values=self.config.residual_values,
             seed=self.config.seed,
         )
 

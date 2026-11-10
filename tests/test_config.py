@@ -59,6 +59,16 @@ def test_features_and_policies_are_split() -> None:
     assert config.comparison_policies == ("offline", "uniform")
 
 
+def test_operators_are_split_and_validated() -> None:
+    config = merge_config({"operators": "add, mul"})
+    assert config.operators == ("add", "mul")
+    assert config.to_dict()["operators"] == ["add", "mul"]
+    with pytest.raises(ValueError, match="Unknown operators"):
+        RunConfig(function="linear", operators=("mystery",))
+    with pytest.raises(ValueError, match="at least one"):
+        RunConfig(function="linear", operators=())
+
+
 def test_to_dict_contains_search_and_data_options() -> None:
     config = RunConfig(function="linear", output="out")
     payload = config.to_dict()

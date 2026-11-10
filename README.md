@@ -52,7 +52,63 @@ uv run symbolic-regression compare --function composite \
 # Load a CSV dataset.
 uv run symbolic-regression run --csv data.csv --target y --policy offline \
   --output runs --run-name csv
+
+# Restrict the operators used by the search.
+uv run symbolic-regression run --function quadratic --policy offline \
+  --operators add,mul --iterations 20 --output runs --run-name restricted
 ```
+
+## Python library
+
+The package exposes a programmatic API for use inside another program:
+
+```python
+import numpy as np
+from symbolic_regression import fit
+
+x = np.linspace(-2.0, 2.0, 41)
+result = fit(
+    {"x": x},
+    x**2,
+    operators=("mul", "add", "sub"),
+    iterations=50,
+    seed=0,
+)
+
+print(result.expression_str)          # recovered tree, e.g. "(x * x)"
+print(result.simplified_expression)   # SymPy form, e.g. "x**2"
+print(result.r2, result.mse, result.nmse)
+print(result.stop_reason.value)
+print(result.to_dict())               # full diagnostics, including traces
+```
+
+`fit` accepts a mapping of column name to values, a 2-D NumPy array (with
+`feature_names`), or a data-frame-like object. The target can be a values array
+or a column name when the input container already contains it. Pass
+`operators=...` to restrict the search (`None` means every registered operator;
+`available_operators()` lists them). The default policy is `"offline"`; use
+`policy="decision"` with a running Ollama server, or pass a custom policy
+instance.
+
+`FitResult` exposes `expression`, `expression_str`, `simplified_expression`,
+`evaluation` (plus `mse`, `nmse`, `r2`, and `valid` properties), `reward`,
+`steps`, `stop_reason`, `iterations`, `decision_calls`, `fallback_calls`,
+`elapsed_seconds`, `history`, `decisions`, and `predict(features)`. There is
+also a small stateful wrapper:
+
+```python
+from symbolic_regression import SymbolicRegressor
+
+model = SymbolicRegressor(operators=("mul", "add"), iterations=50)
+model.fit({"x": x}, x**2)
+print(model.simplified_expression_)
+print(model.diagnostics_)
+predictions = model.predict({"x": np.array([-1.0, 0.0, 1.0])})
+```
+
+Runnable, self-contained examples are in [`examples/`](examples/README.md); they
+cover basic fits, operator subsets, multi-feature data, diagnostics, a custom
+policy, the regressor wrapper, and the Ollama decision policy.
 
 A TOML configuration file can hold the same options; command-line values
 override it:
