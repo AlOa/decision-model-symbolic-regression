@@ -8,6 +8,7 @@ from typing import Any
 
 from .expression import Expr, to_string
 from .metrics import Evaluation, reward
+from .simplify import simplify_expression
 
 
 class StopReason(str, Enum):
@@ -69,10 +70,16 @@ class SearchResult:
     fallback_calls: int = 0
     iterations: int = 0
     elapsed_seconds: float = 0.0
+    simplified_expression: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.simplified_expression is None and self.best_expression is not None:
+            self.simplified_expression = simplify_expression(self.best_expression)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "best_expression": to_string(self.best_expression) if self.best_expression else None,
+            "simplified_expression": self.simplified_expression,
             "best_metrics": self.best_evaluation.to_dict() if self.best_evaluation else None,
             "best_reward": float(self.best_reward),
             "steps": int(self.steps),

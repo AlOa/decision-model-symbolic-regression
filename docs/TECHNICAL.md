@@ -181,6 +181,22 @@ dell'output.
 La complessità è il numero di nodi (`node_count`). Questa metrica viene usata
 nei tie-break e negli artefatti.
 
+### 4.4 Semplificazione SymPy
+
+Quando la ricerca produce un'espressione finale, `result.py` ne calcola una
+forma semplificata con `simplify.py`:
+
+- `to_sympy(expr)` converte l'albero nell'espressione SymPy equivalente; le
+  variabili sono simboli reali e le costanti diventano razionali esatti
+  (`0.5` → `1/2`);
+- `simplify_expression(expr)` chiama `sympy.simplify` e restituisce la stringa
+  risultante, oppure `None` se la conversione o la semplificazione falliscono.
+
+La semplificazione è informativa: l'espressione originale e le metriche misurate
+restano quelle della ricerca. Il risultato semplificato compare in
+`SearchResult.simplified_expression`, in `result.json`, nel `summary.md`, nel
+confronto e nell'output della CLI quando differisce dalla forma originale.
+
 ---
 
 ## 5. Suite di funzioni e generazione dei dataset
@@ -742,8 +758,8 @@ Contiene:
   durata;
 - `search`: parametri di ricerca usati;
 - `dataset`: righe, feature e metadati (inclusi rumore e ground truth);
-- `result`: espressione migliore, metriche, reward, complessità, decision call,
-  fallback, iterazioni, stop reason, durata.
+- `result`: espressione migliore, sua forma semplificata con SymPy, metriche,
+  reward, complessità, decision call, fallback, iterazioni, stop reason, durata.
 
 ### 12.2 `trace.json`
 
@@ -755,9 +771,9 @@ Contiene:
 
 ### 12.3 `summary.md`
 
-Riassunto leggibile con funzione, policy, espressione, ground truth, MSE, NMSE,
-R², complessità, decision call, fallback, iterazioni, stop reason, tempo, seed
-e rumore.
+Riassunto leggibile con funzione, policy, espressione (e forma semplificata se
+diversa), ground truth, MSE, NMSE, R², complessità, decision call, fallback,
+iterazioni, stop reason, tempo, seed e rumore.
 
 ### 12.4 Confronto
 
@@ -885,6 +901,7 @@ SimbolicRegression/
 │   ├── metrics.py                  MSE, NMSE, R², reward
 │   ├── context.py                  contesto compatto per il modello
 │   ├── result.py                   stop reason e SearchResult
+│   ├── simplify.py                 semplificazione SymPy dell'espressione finale
 │   ├── config.py                   RunConfig, TOML, merge CLI
 │   ├── cli.py                      comandi run e compare
 │   ├── decision/

@@ -45,5 +45,18 @@ def test_search_result_serialization() -> None:
     )
     payload = result.to_dict()
     assert payload["best_expression"] == "3.5"
+    assert payload["simplified_expression"] == "7/2"
     assert payload["stop_reason"] == "fit_threshold"
     assert reward_of(evaluation(1.0)) == 1.0
+
+
+def test_search_result_simplification_is_best_effort() -> None:
+    result = SearchResult(
+        best_expression=None,
+        best_evaluation=None,
+        best_reward=0.0,
+        steps=0,
+        stop_reason=StopReason.ERROR,
+    )
+    assert result.simplified_expression is None
+    assert result.to_dict()["simplified_expression"] is None

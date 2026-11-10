@@ -171,10 +171,15 @@ def compare_experiments(config: RunConfig) -> ComparisonOutcome:
 def format_outcome(outcome: RunOutcome) -> str:
     result = outcome.result
     evaluation = result.best_evaluation
+    raw_expression = (
+        to_string(result.best_expression) if result.best_expression else "none"
+    )
     lines = [
         f"Policy: {outcome.policy_name}",
-        f"Recovered expression: {to_string(result.best_expression) if result.best_expression else 'none'}",
+        f"Recovered expression: {raw_expression}",
     ]
+    if result.simplified_expression and result.simplified_expression != raw_expression:
+        lines.append(f"Simplified expression: {result.simplified_expression}")
     if evaluation is not None and evaluation.valid:
         lines.append(f"MSE: {evaluation.mse:.6g}")
         lines.append(f"NMSE: {evaluation.nmse:.6g}")

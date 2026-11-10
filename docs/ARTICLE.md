@@ -202,7 +202,7 @@ uv run symbolic-regression compare --function composite \
   --policies decision,uniform --iterations 50 --output runs --run-name compare
 ```
 
-Ogni run scrive un `result.json`, un `trace.json` e un `summary.md`. Il risultato contiene l'espressione trovata, il ground truth quando disponibile, le metriche, la complessità, il numero di decision call, i fallback e la ragione di stop. Il trace contiene le decisioni del modello e le iterazioni della ricerca.
+Ogni run scrive un `result.json`, un `trace.json` e un `summary.md`. Il risultato contiene l'espressione trovata (con la sua forma semplificata con SymPy), il ground truth quando disponibile, le metriche, la complessità, il numero di decision call, i fallback e la ragione di stop. Il trace contiene le decisioni del modello e le iterazioni della ricerca.
 
 Il confronto produce anche `comparison.json` e `comparison.md`, con le due policy affiancate sullo stesso seed e sullo stesso budget.
 

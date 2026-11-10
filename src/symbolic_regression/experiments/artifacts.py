@@ -87,14 +87,19 @@ def _summary(
     result: SearchResult,
     policy_name: str,
 ) -> str:
+    raw_expression = (
+        to_string(result.best_expression) if result.best_expression else "none"
+    )
     lines = [
         "# Run summary",
         "",
         f"- Function: {dataset.metadata.get('function', 'CSV dataset')}",
         f"- Policy: {policy_name}",
-        f"- Recovered expression: {to_string(result.best_expression) if result.best_expression else 'none'}",
-        f"- Ground truth: {dataset.metadata.get('expression', 'n/a')}",
+        f"- Recovered expression: {raw_expression}",
     ]
+    if result.simplified_expression and result.simplified_expression != raw_expression:
+        lines.append(f"- Simplified expression: {result.simplified_expression}")
+    lines.append(f"- Ground truth: {dataset.metadata.get('expression', 'n/a')}")
     if result.best_evaluation is not None and result.best_evaluation.valid:
         evaluation = result.best_evaluation
         lines.extend(
@@ -199,7 +204,10 @@ def write_comparison_artifacts(
     ]
     for policy, result in collected:
         evaluation = result.best_evaluation
-        expression = to_string(result.best_expression) if result.best_expression else "none"
+        expression = (
+            result.simplified_expression
+            or (to_string(result.best_expression) if result.best_expression else "none")
+        )
         r2 = f"{evaluation.r2:.6g}" if evaluation and evaluation.valid else "n/a"
         nmse = f"{evaluation.nmse:.6g}" if evaluation and evaluation.valid else "n/a"
         mse = f"{evaluation.mse:.6g}" if evaluation and evaluation.valid else "n/a"

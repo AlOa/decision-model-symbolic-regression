@@ -74,8 +74,9 @@ uv run symbolic-regression run --config run.toml --iterations 5
 
 Each run writes to `<output>/<run-name>/`:
 
-- `result.json`: recovered expression, ground truth, metrics, complexity,
-  decision counts, stop reason, dataset metadata, and search settings.
+- `result.json`: recovered expression, its SymPy-simplified form, ground truth,
+  metrics, complexity, decision counts, stop reason, dataset metadata, and
+  search settings.
 - `trace.json`: per-decision records (probabilities, confidence, errors) and
   per-iteration search records.
 - `summary.md`: human-readable summary.

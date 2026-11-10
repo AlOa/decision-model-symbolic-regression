@@ -38,6 +38,7 @@ def test_offline_run_writes_artifacts(tmp_path) -> None:
     payload = json.loads(outcome.artifacts.result.read_text(encoding="utf-8"))
     assert payload["run"]["policy"] == "offline"
     assert payload["result"]["best_expression"]
+    assert payload["result"]["simplified_expression"]
     assert payload["result"]["ground_truth"]
     assert payload["dataset"]["metadata"]["noise_mode"] == "std"
     fresh = evaluate_expression(outcome.result.best_expression, outcome.dataset)
