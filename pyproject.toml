@@ -1,14 +1,43 @@
 [project]
-name = "simbolicregression"
+name = "decision-model-symbolic-regression"
 version = "0.1.0"
 description = "Decision-model-guided symbolic regression with Monte Carlo Tree Search"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
+authors = [
+    { name = "Alberto Orlandi", email = "orlandi.alberto@gmail.com" },
+]
+keywords = [
+    "symbolic-regression",
+    "decision-model",
+    "monte-carlo-tree-search",
+    "mcts",
+    "ollama",
+    "machine-learning",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "httpx>=0.27",
     "numpy>=2.0",
     "sympy>=1.14.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/AlOa/decision-model-symbolic-regression"
+Repository = "https://github.com/AlOa/decision-model-symbolic-regression"
+Issues = "https://github.com/AlOa/decision-model-symbolic-regression/issues"
+Documentation = "https://github.com/AlOa/decision-model-symbolic-regression/blob/main/docs/USAGE.md"
+
 
 [dependency-groups]
 dev = [
